@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import puppeteer from "puppeteer";
 import { generateResumeContent } from "../services/ai.service.js";
 import User from "../models/user.model.js";
 import Resume from "../models/resume.model.js";
@@ -9,18 +9,18 @@ import Resume from "../models/resume.model.js";
 const generatePdfBuffer = async (resume) => {
   let browser;
   try {
-    console.log('[PDF] Launching browser...');
+    console.log("[PDF] Launching browser...");
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
+
+    // 🔥 OPTIONAL BUT IMPORTANT (prevents blank PDFs sometimes)
+    await page.evaluateHandle("document.fonts.ready");
     browser = await puppeteer.launch({
-      headless: 'new',
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
-                     (process.env.NODE_ENV === 'production' ? '/usr/bin/google-chrome' : undefined),
+      headless: "new",
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-zygote',
-        '--single-process'
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
       ],
       timeout: 60000,
     });
@@ -78,84 +78,108 @@ const generatePdfBuffer = async (resume) => {
       <body>
         <div class="container">
           <div class="header">
-            <div class="name">${escapeHtml(resume?.name || 'Candidate Name')}</div>
-            <div class="role-title">${escapeHtml(resume?.experience?.[0]?.role || 'Full Stack Developer')}</div>
+            <div class="name">${escapeHtml(resume?.name || "Candidate Name")}</div>
+            <div class="role-title">${escapeHtml(resume?.experience?.[0]?.role || "Full Stack Developer")}</div>
             <div class="contact-line">
-              <span>${escapeHtml(resume?.experience?.[0]?.location || 'Location')}</span>
-              ${resume?.contactNumber ? `<span>${escapeHtml(resume.contactNumber)}</span>` : ''}
-              ${resume?.email ? `<a href="mailto:${escapeHtml(resume.email)}">${escapeHtml(resume.email)}</a>` : ''}
-              ${(resume?.socialLinks || [])?.map(sl => {
-                if (!sl?.link) return '';
-                const display = sl.link.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
-                return `<a href="${escapeHtml(sl.link)}">${escapeHtml(display)}</a>`;
-              }).join(' ')}
+              <span>${escapeHtml(resume?.experience?.[0]?.location || "Location")}</span>
+              ${resume?.contactNumber ? `<span>${escapeHtml(resume.contactNumber)}</span>` : ""}
+              ${resume?.email ? `<a href="mailto:${escapeHtml(resume.email)}">${escapeHtml(resume.email)}</a>` : ""}
+              ${(resume?.socialLinks || [])
+                ?.map((sl) => {
+                  if (!sl?.link) return "";
+                  const display = sl.link
+                    .replace(/^(https?:\/\/)?(www\.)?/, "")
+                    .replace(/\/$/, "");
+                  return `<a href="${escapeHtml(sl.link)}">${escapeHtml(display)}</a>`;
+                })
+                .join(" ")}
             </div>
           </div>
 
           <h2>PROFESSIONAL SUMMARY</h2>
-          <p>${escapeHtml(resume?.summary || 'Summary not provided.')}</p>
+          <p>${escapeHtml(resume?.summary || "Summary not provided.")}</p>
 
           <h2>PROFESSIONAL EXPERIENCE</h2>
-          ${(resume?.experience || [])?.map(exp => `
+          ${
+            (resume?.experience || [])
+              ?.map(
+                (exp) => `
             <div class="dated-entry">
               <div class="entry-row header-row">
-                <span>${escapeHtml(exp?.company || 'Company')}</span>
-                <span>${escapeHtml(exp?.startDate || '')} -- ${escapeHtml(exp?.endDate || 'Present')}</span>
+                <span>${escapeHtml(exp?.company || "Company")}</span>
+                <span>${escapeHtml(exp?.startDate || "")} -- ${escapeHtml(exp?.endDate || "Present")}</span>
               </div>
               <div class="entry-row sub-row">
-                <span>${escapeHtml(exp?.role || 'Role')}</span>
-                <span>${escapeHtml(exp?.location || '')}</span>
+                <span>${escapeHtml(exp?.role || "Role")}</span>
+                <span>${escapeHtml(exp?.location || "")}</span>
               </div>
               <ul>
                 ${(exp?.description || "")
                   .split(/[\.\n]+/)
                   .filter(Boolean)
-                  .map(d => `<li>${escapeHtml(d.trim())}.</li>`)
-                  .join('')}
+                  .map((d) => `<li>${escapeHtml(d.trim())}.</li>`)
+                  .join("")}
               </ul>
             </div>
-          `).join('') || '<p>No experience listed.</p>'}
+          `,
+              )
+              .join("") || "<p>No experience listed.</p>"
+          }
 
           <h2>EDUCATION</h2>
-          ${(resume?.education || [])?.map(edu => `
+          ${
+            (resume?.education || [])
+              ?.map(
+                (edu) => `
             <div class="dated-entry">
               <div class="entry-row header-row">
-                <span>${escapeHtml(edu?.institution || 'Institution')}</span>
-                <span>${escapeHtml(edu?.startYear || '')} -- ${escapeHtml(edu?.endYear || '')}</span>
+                <span>${escapeHtml(edu?.institution || "Institution")}</span>
+                <span>${escapeHtml(edu?.startYear || "")} -- ${escapeHtml(edu?.endYear || "")}</span>
               </div>
               <div class="entry-row sub-row">
-                <span>${escapeHtml(edu?.degree || 'Degree')}</span>
-                <span>${escapeHtml(edu?.location || '')}</span>
+                <span>${escapeHtml(edu?.degree || "Degree")}</span>
+                <span>${escapeHtml(edu?.location || "")}</span>
               </div>
             </div>
-          `).join('') || '<p>No education listed.</p>'}
+          `,
+              )
+              .join("") || "<p>No education listed.</p>"
+          }
 
-          ${(resume?.projects || []).length > 0 ? `
+          ${
+            (resume?.projects || []).length > 0
+              ? `
             <h2>PROJECTS</h2>
             <ul style="padding-left: 0;">
-              ${resume.projects.map(p => `
+              ${resume.projects
+                .map(
+                  (p) => `
                 <li class="project-item">
                   <div class="project-main">
-                    • ${escapeHtml(p?.title || 'Project')} 
-                    ${(p?.technologies || []).length > 0 ? `<span class="project-tech"> — ${escapeHtml(p.technologies.join(', '))}</span>` : ''}
+                    • ${escapeHtml(p?.title || "Project")} 
+                    ${(p?.technologies || []).length > 0 ? `<span class="project-tech"> — ${escapeHtml(p.technologies.join(", "))}</span>` : ""}
                   </div>
                   <ul class="project-desc">
                     ${(p?.description || "")
                       .split(/[\.\n]+/)
                       .filter(Boolean)
-                      .map(d => `<li>${escapeHtml(d.trim())}.</li>`)
-                      .join('')}
+                      .map((d) => `<li>${escapeHtml(d.trim())}.</li>`)
+                      .join("")}
                   </ul>
                 </li>
-              `).join('')}
+              `,
+                )
+                .join("")}
             </ul>
-          ` : ''}
+          `
+              : ""
+          }
 
           <h2>TECHNICAL SKILLS</h2>
           <table class="skills-table">
             <tr>
               <td class="skills-key">Technical Stack</td>
-              <td>${escapeHtml((resume?.skills || [])?.join(', ') || 'None listed')}</td>
+              <td>${escapeHtml((resume?.skills || [])?.join(", ") || "None listed")}</td>
             </tr>
           </table>
         </div>
@@ -163,20 +187,20 @@ const generatePdfBuffer = async (resume) => {
       </html>
     `;
 
-    console.log('[PDF] Generating buffer...');
+    console.log("[PDF] Generating buffer...");
     // waitUntil 'networkidle2' is often better for production environments
-    await page.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.setContent(html, { waitUntil: "networkidle2", timeout: 30000 });
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       printBackground: true,
-      margin: { top: '0.4in', right: '0.5in', bottom: '0.4in', left: '0.5in' },
-      preferCSSPageSize: true
+      margin: { top: "0.4in", right: "0.5in", bottom: "0.4in", left: "0.5in" },
+      preferCSSPageSize: true,
     });
 
     await browser.close();
     return pdfBuffer;
   } catch (err) {
-    console.error('[PDF ERROR]', err);
+    console.error("[PDF ERROR]", err);
     if (browser) await browser.close();
     throw new Error(`PDF generation failed: ${err.message}`);
   }
@@ -208,12 +232,9 @@ export const generateResume = async (req, res) => {
       education,
     } = req.body;
 
-    if (
-      !name ||
-      !jobDescription
-    ) {
+    if (!name || !jobDescription) {
       return res.status(400).json({
-        error: "Name and job description are required"
+        error: "Name and job description are required",
       });
     }
 
@@ -225,7 +246,7 @@ export const generateResume = async (req, res) => {
     const existingResume = await Resume.findOne({ userId: user._id });
     if (existingResume) {
       return res.status(403).json({
-        error: "Free plan allows only one resume. Use update for edits."
+        error: "Free plan allows only one resume. Use update for edits.",
       });
     }
 
@@ -256,7 +277,6 @@ export const generateResume = async (req, res) => {
       success: true,
       data: newResume,
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Resume generation failed" });
@@ -289,7 +309,9 @@ export const updateResume = async (req, res) => {
     });
 
     if (!resume) {
-      return res.status(404).json({ error: "Resume not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ error: "Resume not found or unauthorized" });
     }
 
     const user = await User.findById(req.userId);
@@ -313,7 +335,7 @@ export const updateResume = async (req, res) => {
         const timeLeftHours = Math.ceil(timeLeftMs / (60 * 60 * 1000));
 
         return res.status(403).json({
-          error: `AI regeneration limit reached. Try again in ${timeLeftHours} hour${timeLeftHours > 1 ? 's' : ''}.`,
+          error: `AI regeneration limit reached. Try again in ${timeLeftHours} hour${timeLeftHours > 1 ? "s" : ""}.`,
         });
       }
 
@@ -358,9 +380,12 @@ export const updateResume = async (req, res) => {
     if (socialLinks) resume.socialLinks = socialLinks;
     if (summary !== undefined) resume.summary = summary;
     if (skills !== undefined && Array.isArray(skills)) resume.skills = skills;
-    if (projects !== undefined && Array.isArray(projects)) resume.projects = projects;
-    if (experience !== undefined && Array.isArray(experience)) resume.experience = experience;
-    if (education !== undefined && Array.isArray(education)) resume.education = education;
+    if (projects !== undefined && Array.isArray(projects))
+      resume.projects = projects;
+    if (experience !== undefined && Array.isArray(experience))
+      resume.experience = experience;
+    if (education !== undefined && Array.isArray(education))
+      resume.education = education;
 
     await resume.save();
 
@@ -369,7 +394,6 @@ export const updateResume = async (req, res) => {
       message: "Resume updated successfully",
       data: resume,
     });
-
   } catch (error) {
     console.error("Update resume error:", error);
     res.status(500).json({ error: "Failed to update resume" });
@@ -382,7 +406,7 @@ export const downloadResume = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log('[Download] Requested resume ID:', id);
+    console.log("[Download] Requested resume ID:", id);
 
     const resume = await Resume.findOne({
       _id: id,
@@ -390,35 +414,42 @@ export const downloadResume = async (req, res) => {
     }).lean();
 
     if (!resume) {
-      console.log('[Download] Resume not found for ID:', id);
+      console.log("[Download] Resume not found for ID:", id);
       return res.status(404).json({
         error: "Resume not found or unauthorized",
       });
     }
 
-    console.log('[Download] Resume found. Name:', resume.name);
+    console.log("[Download] Resume found. Name:", resume.name);
 
     const pdfBuffer = await generatePdfBuffer(resume);
 
-    console.log('[Download] PDF buffer ready. Size:', pdfBuffer.length, 'bytes');
+    console.log(
+      "[Download] PDF buffer ready. Size:",
+      pdfBuffer.length,
+      "bytes",
+    );
 
     if (pdfBuffer.length < 5000) {
-      throw new Error('Generated PDF is too small - likely corrupted');
+      throw new Error("Generated PDF is too small - likely corrupted");
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="resume-${resume.name?.replace(/\s+/g, '_') || 'candidate'}-${id}.pdf"`
+      "Content-Disposition",
+      `attachment; filename="resume-${resume.name?.replace(/\s+/g, "_") || "candidate"}-${id}.pdf"`,
     );
-    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader("Content-Length", pdfBuffer.length);
 
     res.send(Buffer.from(pdfBuffer));
   } catch (error) {
-    console.error('[Download ERROR] Full details:', error.stack || error.message);
-    res.status(500).json({ 
-      error: 'Failed to generate PDF', 
-      details: error.message 
+    console.error(
+      "[Download ERROR] Full details:",
+      error.stack || error.message,
+    );
+    res.status(500).json({
+      error: "Failed to generate PDF",
+      details: error.message,
     });
   }
 };
@@ -450,7 +481,9 @@ export const getSingleResume = async (req, res) => {
     const resume = await Resume.findOne({ _id: id, userId: req.userId });
 
     if (!resume) {
-      return res.status(404).json({ error: "Resume not found or unauthorized" });
+      return res
+        .status(404)
+        .json({ error: "Resume not found or unauthorized" });
     }
 
     res.json({ success: true, data: resume });
