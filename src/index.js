@@ -1,4 +1,4 @@
-import "dotenv/config"; 
+import "dotenv/config";
 import express from "express";
 import { connectDB } from "./config/db.js";
 import cors from "cors";
@@ -14,13 +14,12 @@ connectDB();
 const app = express();
 
 // ✅ CORS (FIXED)
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://inforge.vercel.app"
-  ],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://inkforge-jade.vercel.app"],
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,7 +48,7 @@ app.use((err, req, res, next) => {
   console.error("Stack:", err.stack);
 
   res.status(500).json({
-    message: err.message || "Something went wrong"
+    message: err.message || "Something went wrong",
   });
 });
 
