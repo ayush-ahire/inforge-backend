@@ -16,7 +16,7 @@ const app = express();
 // ✅ CORS (FIXED)
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://inkforge-jade.vercel.app"],
+    origin: ["http://localhost:3000", "https://inkforge-jade.vercel.app"],
     credentials: true,
   }),
 );
