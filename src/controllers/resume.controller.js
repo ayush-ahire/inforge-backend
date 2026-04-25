@@ -12,12 +12,20 @@ const generatePdfBuffer = async (resume) => {
     console.log('[PDF] Launching browser...');
     browser = await puppeteer.launch({
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-      timeout: 90000,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-zygote',
+        '--single-process'
+      ],
+      timeout: 60000,
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
+    // Use a reasonable viewport for A4
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
 
     const html = `
       <!DOCTYPE html>
@@ -68,35 +76,36 @@ const generatePdfBuffer = async (resume) => {
       <body>
         <div class="container">
           <div class="header">
-            <div class="name">${escapeHtml(resume.name || 'Candidate Name')}</div>
-            <div class="role-title">${escapeHtml(resume.experience?.[0]?.role || 'Full Stack Developer')}</div>
+            <div class="name">${escapeHtml(resume?.name || 'Candidate Name')}</div>
+            <div class="role-title">${escapeHtml(resume?.experience?.[0]?.role || 'Full Stack Developer')}</div>
             <div class="contact-line">
-              <span>${escapeHtml(resume.experience?.[0]?.location || 'Nashik, Maharashtra')}</span>
-              ${resume.contactNumber ? `<span>${escapeHtml(resume.contactNumber)}</span>` : ''}
-              ${resume.email ? `<a href="mailto:${escapeHtml(resume.email)}">${escapeHtml(resume.email)}</a>` : ''}
-              ${resume.socialLinks?.map(sl => {
+              <span>${escapeHtml(resume?.experience?.[0]?.location || 'Location')}</span>
+              ${resume?.contactNumber ? `<span>${escapeHtml(resume.contactNumber)}</span>` : ''}
+              ${resume?.email ? `<a href="mailto:${escapeHtml(resume.email)}">${escapeHtml(resume.email)}</a>` : ''}
+              ${(resume?.socialLinks || [])?.map(sl => {
+                if (!sl?.link) return '';
                 const display = sl.link.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
                 return `<a href="${escapeHtml(sl.link)}">${escapeHtml(display)}</a>`;
-              }).join(' ') || ''}
+              }).join(' ')}
             </div>
           </div>
 
           <h2>PROFESSIONAL SUMMARY</h2>
-          <p>${escapeHtml(resume.summary || 'Summary not provided.')}</p>
+          <p>${escapeHtml(resume?.summary || 'Summary not provided.')}</p>
 
           <h2>PROFESSIONAL EXPERIENCE</h2>
-          ${resume.experience?.map(exp => `
+          ${(resume?.experience || [])?.map(exp => `
             <div class="dated-entry">
               <div class="entry-row header-row">
-                <span>${escapeHtml(exp.company)}</span>
-                <span>${escapeHtml(exp.startDate)} -- ${escapeHtml(exp.endDate)}</span>
+                <span>${escapeHtml(exp?.company || 'Company')}</span>
+                <span>${escapeHtml(exp?.startDate || '')} -- ${escapeHtml(exp?.endDate || 'Present')}</span>
               </div>
               <div class="entry-row sub-row">
-                <span>${escapeHtml(exp.role)}</span>
-                <span>${escapeHtml(exp.location)}</span>
+                <span>${escapeHtml(exp?.role || 'Role')}</span>
+                <span>${escapeHtml(exp?.location || '')}</span>
               </div>
               <ul>
-                ${exp.description
+                ${(exp?.description || "")
                   .split(/[\.\n]+/)
                   .filter(Boolean)
                   .map(d => `<li>${escapeHtml(d.trim())}.</li>`)
@@ -106,30 +115,30 @@ const generatePdfBuffer = async (resume) => {
           `).join('') || '<p>No experience listed.</p>'}
 
           <h2>EDUCATION</h2>
-          ${resume.education?.map(edu => `
+          ${(resume?.education || [])?.map(edu => `
             <div class="dated-entry">
               <div class="entry-row header-row">
-                <span>${escapeHtml(edu.institution)}</span>
-                <span>${escapeHtml(edu.startYear)} -- ${escapeHtml(edu.endYear)}</span>
+                <span>${escapeHtml(edu?.institution || 'Institution')}</span>
+                <span>${escapeHtml(edu?.startYear || '')} -- ${escapeHtml(edu?.endYear || '')}</span>
               </div>
               <div class="entry-row sub-row">
-                <span>${escapeHtml(edu.degree)}</span>
-                <span>${escapeHtml(edu.location || '')}</span>
+                <span>${escapeHtml(edu?.degree || 'Degree')}</span>
+                <span>${escapeHtml(edu?.location || '')}</span>
               </div>
             </div>
           `).join('') || '<p>No education listed.</p>'}
 
-          ${resume.projects?.length > 0 ? `
+          ${(resume?.projects || []).length > 0 ? `
             <h2>PROJECTS</h2>
             <ul style="padding-left: 0;">
               ${resume.projects.map(p => `
                 <li class="project-item">
                   <div class="project-main">
-                    • ${escapeHtml(p.title)} 
-                    ${p.technologies?.length > 0 ? `<span class="project-tech"> — ${escapeHtml(p.technologies.join(', '))}</span>` : ''}
+                    • ${escapeHtml(p?.title || 'Project')} 
+                    ${(p?.technologies || []).length > 0 ? `<span class="project-tech"> — ${escapeHtml(p.technologies.join(', '))}</span>` : ''}
                   </div>
                   <ul class="project-desc">
-                    ${p.description
+                    ${(p?.description || "")
                       .split(/[\.\n]+/)
                       .filter(Boolean)
                       .map(d => `<li>${escapeHtml(d.trim())}.</li>`)
@@ -144,7 +153,7 @@ const generatePdfBuffer = async (resume) => {
           <table class="skills-table">
             <tr>
               <td class="skills-key">Technical Stack</td>
-              <td>${escapeHtml(resume.skills?.join(', ') || 'None listed')}</td>
+              <td>${escapeHtml((resume?.skills || [])?.join(', ') || 'None listed')}</td>
             </tr>
           </table>
         </div>
@@ -153,7 +162,8 @@ const generatePdfBuffer = async (resume) => {
     `;
 
     console.log('[PDF] Generating buffer...');
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // waitUntil 'networkidle2' is often better for production environments
+    await page.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 });
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -164,6 +174,7 @@ const generatePdfBuffer = async (resume) => {
     await browser.close();
     return pdfBuffer;
   } catch (err) {
+    console.error('[PDF ERROR]', err);
     if (browser) await browser.close();
     throw new Error(`PDF generation failed: ${err.message}`);
   }
@@ -171,7 +182,8 @@ const generatePdfBuffer = async (resume) => {
 
 // Helper to prevent HTML injection / broken rendering
 function escapeHtml(unsafe) {
-  return unsafe
+  if (unsafe === undefined || unsafe === null) return "";
+  return String(unsafe)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
