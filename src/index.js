@@ -13,29 +13,43 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// ✅ CORS (FIXED)
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://inforge.vercel.app"
+  ],
+  credentials: true
+}));
 
-// ✅ Log all API calls
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ Logs
 app.use(morgan("dev"));
 
+// ✅ Routes
 app.use("/api/resume", resumeRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
+// ✅ Health check
 app.get("/", (req, res) => {
   res.send("inkforge backend running 🚀");
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
+});
 
-// ✅ Simple error logger
+// ✅ Error handler
 app.use((err, req, res, next) => {
   console.error("Error:", err.message);
   console.error("Route:", req.originalUrl);
   console.error("Stack:", err.stack);
 
   res.status(500).json({
-    message: "Something went wrong"
+    message: err.message || "Something went wrong"
   });
 });
 
