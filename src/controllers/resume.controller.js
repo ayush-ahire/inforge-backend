@@ -12,7 +12,8 @@ const generatePdfBuffer = async (resume) => {
     console.log('[PDF] Launching browser...');
     browser = await puppeteer.launch({
       headless: 'new',
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
+                     (process.env.NODE_ENV === 'production' ? '/usr/bin/google-chrome' : undefined),
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
