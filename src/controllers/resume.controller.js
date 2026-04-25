@@ -10,10 +10,7 @@ const generatePdfBuffer = async (resume) => {
   let browser;
   try {
     console.log("[PDF] Launching browser...");
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
 
-    // 🔥 OPTIONAL BUT IMPORTANT (prevents blank PDFs sometimes)
-    await page.evaluateHandle("document.fonts.ready");
     browser = await puppeteer.launch({
       headless: "new",
       args: [
@@ -26,6 +23,7 @@ const generatePdfBuffer = async (resume) => {
     });
 
     const page = await browser.newPage();
+
     // Use a reasonable viewport for A4
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
 
@@ -188,8 +186,12 @@ const generatePdfBuffer = async (resume) => {
     `;
 
     console.log("[PDF] Generating buffer...");
-    // waitUntil 'networkidle2' is often better for production environments
-    await page.setContent(html, { waitUntil: "networkidle2", timeout: 30000 });
+
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
+
+    // ✅ Correct placement
+    await page.evaluateHandle("document.fonts.ready");
+
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
